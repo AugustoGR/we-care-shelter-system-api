@@ -11,12 +11,31 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
+  id        String    @id @default(uuid())
+  email     String    @unique
   password  String
   name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  shelters  Shelter[]
 
   @@map("users")
+}
+
+model Shelter {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  calamity    String
+  address     String
+  city        String
+  state       String
+  cep         String
+  active      Boolean  @default(true)
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("shelters")
 }
