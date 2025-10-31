@@ -24,7 +24,7 @@ model User {
 }
 
 model Shelter {
-  id          String      @id @default(uuid())
+  id          String            @id @default(uuid())
   name        String
   description String?
   calamity    String
@@ -32,12 +32,15 @@ model Shelter {
   city        String
   state       String
   cep         String
-  active      Boolean     @default(true)
+  active      Boolean           @default(true)
   ownerId     String
-  owner       User        @relation(fields: [ownerId], references: [id])
+  owner       User              @relation(fields: [ownerId], references: [id])
   volunteers  Volunteer[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  animals     Animal[]
+  shelteredPeople ShelteredPerson[]
+  resources   Resource[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@map("shelters")
 }
@@ -56,4 +59,58 @@ model Volunteer {
   updatedAt    DateTime @updatedAt
 
   @@map("volunteers")
+}
+
+model Animal {
+  id        String   @id @default(uuid())
+  name      String
+  species   String
+  breed     String?
+  age       Int?
+  sex       String
+  health    String
+  care      String?
+  rabies    Boolean  @default(false)
+  cinomose  Boolean  @default(false)
+  parvo     Boolean  @default(false)
+  felina    Boolean  @default(false)
+  photo     String?
+  status    String   @default("Em Cuidado")
+  shelterId String
+  shelter   Shelter  @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("animals")
+}
+
+model ShelteredPerson {
+  id              String   @id @default(uuid())
+  nome            String
+  cpf             String   @unique
+  dataNascimento  DateTime
+  genero          String
+  status          String   @default("Ativo")
+  shelterId       String
+  shelter         Shelter  @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("sheltered_people")
+}
+
+model Resource {
+  id         String    @id @default(uuid())
+  nome       String
+  categoria  String
+  quantidade Int
+  unidade    String
+  validade   DateTime?
+  status     String    @default("Em Estoque")
+  shelterId  String
+  shelter    Shelter   @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("resources")
 }

@@ -7,6 +7,9 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SheltersModule } from './shelters/shelters.module';
 import { VolunteersModule } from './volunteers/volunteers.module';
+import { AnimalsModule } from './animals/animals.module';
+import { ShelteredPeopleModule } from './sheltered-people/sheltered-people.module';
+import { ResourcesModule } from './resources/resources.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { VolunteersModule } from './volunteers/volunteers.module';
     UsersModule,
     SheltersModule,
     VolunteersModule,
+    AnimalsModule,
+    ShelteredPeopleModule,
+    ResourcesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
