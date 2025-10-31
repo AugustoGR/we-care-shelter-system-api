@@ -6,6 +6,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SheltersModule } from './shelters/shelters.module';
+import { VolunteersModule } from './volunteers/volunteers.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SheltersModule } from './shelters/shelters.module';
     AuthModule,
     UsersModule,
     SheltersModule,
+    VolunteersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

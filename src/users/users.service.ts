@@ -28,6 +28,27 @@ export class UsersService {
     });
   }
 
+  async searchByEmail(emailQuery: string) {
+    if (!emailQuery || emailQuery.length < 3) {
+      return [];
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        email: {
+          contains: emailQuery.toLowerCase(),
+          mode: 'insensitive',
+        },
+      },
+      take: 10, // Limitar a 10 resultados
+      orderBy: {
+        email: 'asc',
+      },
+    });
+
+    return users.map(({ password, ...user }) => user);
+  }
+
   async findById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },

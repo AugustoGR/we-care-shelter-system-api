@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  password  String
-  name      String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  shelters  Shelter[]
+  id              String      @id @default(uuid())
+  email           String      @unique
+  password        String
+  name            String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  shelters        Shelter[]
+  volunteerProfile Volunteer?
 
   @@map("users")
 }
 
 model Shelter {
-  id          String   @id @default(uuid())
+  id          String      @id @default(uuid())
   name        String
   description String?
   calamity    String
@@ -31,11 +32,28 @@ model Shelter {
   city        String
   state       String
   cep         String
-  active      Boolean  @default(true)
+  active      Boolean     @default(true)
   ownerId     String
-  owner       User     @relation(fields: [ownerId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  owner       User        @relation(fields: [ownerId], references: [id])
+  volunteers  Volunteer[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@map("shelters")
+}
+
+model Volunteer {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone        String
+  skills       String[] @default([])
+  status       String   @default("Ativo")
+  lastActivity DateTime @default(now())
+  shelterId    String
+  shelter      Shelter  @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("volunteers")
 }
