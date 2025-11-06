@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import moment from 'moment';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateShelteredPersonDto } from './dto/create-sheltered-person.dto';
 import { UpdateShelteredPersonDto } from './dto/update-sheltered-person.dto';
@@ -38,7 +39,7 @@ export class ShelteredPeopleService {
       data: {
         nome: createShelteredPersonDto.nome,
         cpf: createShelteredPersonDto.cpf,
-        dataNascimento: new Date(createShelteredPersonDto.dataNascimento),
+        dataNascimento: moment.utc(createShelteredPersonDto.dataNascimento, 'YYYY-MM-DD').toDate(),
         genero: createShelteredPersonDto.genero,
         status: createShelteredPersonDto.status || 'Ativo',
         shelterId: createShelteredPersonDto.shelterId,
@@ -177,9 +178,10 @@ export class ShelteredPeopleService {
 
     // Converter dataNascimento se fornecida
     if (updateShelteredPersonDto.dataNascimento) {
-      updateData.dataNascimento = new Date(
+      updateData.dataNascimento = moment.utc(
         updateShelteredPersonDto.dataNascimento,
-      );
+        'YYYY-MM-DD',
+      ).toDate();
     }
 
     return this.prisma.shelteredPerson.update({
@@ -272,15 +274,8 @@ export class ShelteredPeopleService {
   }
 
   private calculateAge(birthDate: Date): number {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
-    }
-
-    return age;
+    const today = moment();
+    const birth = moment.utc(birthDate);
+    return today.diff(birth, 'years');
   }
 }

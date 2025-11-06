@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import moment from 'moment';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
@@ -13,7 +14,7 @@ export class ResourcesService {
     return this.prisma.resource.create({
       data: {
         ...rest,
-        validade: validade ? new Date(validade) : null,
+        validade: validade ? moment.utc(validade, 'YYYY-MM-DD').toDate() : null,
       },
       include: {
         shelter: {
@@ -82,7 +83,9 @@ export class ResourcesService {
       where: { id },
       data: {
         ...rest,
-        ...(validade !== undefined && { validade: validade ? new Date(validade) : null }),
+        ...(validade !== undefined && { 
+          validade: validade ? moment.utc(validade, 'YYYY-MM-DD').toDate() : null 
+        }),
       },
       include: {
         shelter: {
