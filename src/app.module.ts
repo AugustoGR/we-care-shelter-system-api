@@ -10,6 +10,7 @@ import { VolunteersModule } from './volunteers/volunteers.module';
 import { AnimalsModule } from './animals/animals.module';
 import { ShelteredPeopleModule } from './sheltered-people/sheltered-people.module';
 import { ResourcesModule } from './resources/resources.module';
+import { ShelterModulesModule } from './shelter-modules/shelter-modules.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ResourcesModule } from './resources/resources.module';
     AnimalsModule,
     ShelteredPeopleModule,
     ResourcesModule,
+    ShelterModulesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

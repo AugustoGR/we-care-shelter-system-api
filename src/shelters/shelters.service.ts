@@ -13,7 +13,8 @@ export class SheltersService {
   constructor(private prisma: PrismaService) {}
 
   async create(createShelterDto: CreateShelterDto, userId: string) {
-    return this.prisma.shelter.create({
+    // Criar o abrigo
+    const shelter = await this.prisma.shelter.create({
       data: {
         ...createShelterDto,
         ownerId: userId,
@@ -28,6 +29,25 @@ export class SheltersService {
         },
       },
     });
+
+    // Criar os módulos padrão
+    const defaultModules = [
+      { moduleKey: 'people', active: true },
+      { moduleKey: 'resources', active: true },
+      { moduleKey: 'volunteers', active: true },
+      { moduleKey: 'animals', active: false },
+      { moduleKey: 'reports', active: false },
+    ];
+
+    await this.prisma.shelterModule.createMany({
+      data: defaultModules.map((mod) => ({
+        shelterId: shelter.id,
+        moduleKey: mod.moduleKey,
+        active: mod.active,
+      })),
+    });
+
+    return shelter;
   }
 
   async findAll(filters?: {
@@ -123,7 +143,9 @@ export class SheltersService {
     }
 
     // Se está tentando alterar o owner, verifica se o usuário atual é o owner
-    if (updateShelterDto.ownerId && updateShelterDto.ownerId !== shelter.ownerId) {
+    if (
+      updateShelterDto.ownerId && 
+      updateShelterDto.ownerId !== shelter.ownerId) {
       if (shelter.ownerId !== userId) {
         throw new ForbiddenException(
           'Apenas o proprietário do abrigo pode transferir a propriedade',
