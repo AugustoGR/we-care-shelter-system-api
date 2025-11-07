@@ -20,16 +20,24 @@ import { ResourcesService } from './resources.service';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ModulePermissionGuard } from '../auth/guards/module-permission.guard';
+import {
+  CheckModulePermission,
+  ModulePermission,
+} from '../auth/decorators/module-permission.decorator';
+import { ModuleKey } from '../auth/decorators/module-key.decorator';
 
 @ApiTags('resources')
 @Controller('resources')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModulePermissionGuard)
 @ApiBearerAuth()
+@ModuleKey('resources')
 export class ResourcesController {
   constructor(private readonly resourcesService: ResourcesService) {}
 
   @Post()
   @ApiOperation({ summary: 'Criar um novo recurso' })
+  @CheckModulePermission(ModulePermission.WRITE)
   @ApiResponse({
     status: 201,
     description: 'Recurso criado com sucesso',
@@ -44,6 +52,7 @@ export class ResourcesController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os recursos' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiQuery({
     name: 'shelterId',
     required: false,
@@ -67,6 +76,7 @@ export class ResourcesController {
 
   @Get('shelter/:shelterId')
   @ApiOperation({ summary: 'Listar recursos por ID do abrigo' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiResponse({
     status: 200,
     description: 'Lista de recursos do abrigo retornada com sucesso',
@@ -77,6 +87,7 @@ export class ResourcesController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar um recurso por ID' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiResponse({
     status: 200,
     description: 'Recurso retornado com sucesso',
@@ -91,6 +102,7 @@ export class ResourcesController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um recurso' })
+  @CheckModulePermission(ModulePermission.WRITE)
   @ApiResponse({
     status: 200,
     description: 'Recurso atualizado com sucesso',
@@ -105,6 +117,7 @@ export class ResourcesController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remover um recurso' })
+  @CheckModulePermission(ModulePermission.WRITE)
   @ApiResponse({
     status: 200,
     description: 'Recurso removido com sucesso',

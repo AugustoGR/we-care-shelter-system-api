@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import moment from 'moment';
+import * as moment from 'moment';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateShelteredPersonDto } from './dto/create-sheltered-person.dto';
 import { UpdateShelteredPersonDto } from './dto/update-sheltered-person.dto';

@@ -30,6 +30,15 @@ export class SheltersService {
       },
     });
 
+    // Criar registro na tabela UserShelter com role OWNER
+    await this.prisma.userShelter.create({
+      data: {
+        userId,
+        shelterId: shelter.id,
+        role: 'OWNER',
+      },
+    });
+
     // Criar os módulos padrão
     const defaultModules = [
       { moduleKey: 'people', active: true },
@@ -115,9 +124,10 @@ export class SheltersService {
     return shelter;
   }
 
-  async findByOwner(ownerId: string) {
-    return this.prisma.shelter.findMany({
-      where: { ownerId },
+  async findAllByUserId(userId: string) {
+    // Busca abrigos onde o usuário é owner
+    const ownedShelters = await this.prisma.shelter.findMany({
+      where: { ownerId: userId },
       include: {
         owner: {
           select: {
@@ -127,10 +137,40 @@ export class SheltersService {
           },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
+    });
+
+    // Busca abrigos onde o usuário é voluntário
+    const volunteer = await this.prisma.volunteer.findUnique({
+      where: { userId },
+      include: {
+        shelter: {
+          include: {
+            owner: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
       },
     });
+
+    const volunteerShelters = volunteer ? [volunteer.shelter] : [];
+
+    // Combina e remove duplicatas
+    const allShelters = [...ownedShelters, ...volunteerShelters];
+    const uniqueShelters = allShelters.filter(
+      (shelter, index, self) =>
+        index === self.findIndex((s) => s.id === shelter.id),
+    );
+
+    // Ordena por data de criação (mais recentes primeiro)
+    return uniqueShelters.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
   }
 
   async update(id: string, updateShelterDto: UpdateShelterDto, userId: string) {
@@ -144,8 +184,9 @@ export class SheltersService {
 
     // Se está tentando alterar o owner, verifica se o usuário atual é o owner
     if (
-      updateShelterDto.ownerId && 
-      updateShelterDto.ownerId !== shelter.ownerId) {
+      updateShelterDto.ownerId &&
+      updateShelterDto.ownerId !== shelter.ownerId
+    ) {
       if (shelter.ownerId !== userId) {
         throw new ForbiddenException(
           'Apenas o proprietário do abrigo pode transferir a propriedade',
@@ -164,7 +205,9 @@ export class SheltersService {
 
     // Apenas o owner pode editar o abrigo
     if (shelter.ownerId !== userId) {
-      throw new ForbiddenException('Apenas o proprietário pode editar este abrigo');
+      throw new ForbiddenException(
+        'Apenas o proprietário pode editar este abrigo',
+      );
     }
 
     return this.prisma.shelter.update({
@@ -193,11 +236,56 @@ export class SheltersService {
 
     // Apenas o owner pode deletar o abrigo
     if (shelter.ownerId !== userId) {
-      throw new ForbiddenException('Apenas o proprietário pode excluir este abrigo');
+      throw new ForbiddenException(
+        'Apenas o proprietário pode excluir este abrigo',
+      );
     }
 
     return this.prisma.shelter.delete({
       where: { id },
     });
+  }
+
+  async getUserRoleInShelter(userId: string, shelterId: string) {
+    const shelter = await this.prisma.shelter.findUnique({
+      where: { id: shelterId },
+    });
+
+    if (!shelter) {
+      throw new NotFoundException(`Abrigo com ID ${shelterId} não encontrado`);
+    }
+
+    // Verifica se é o owner do abrigo
+    if (shelter.ownerId === userId) {
+      return { role: 'OWNER', isAdmin: true };
+    }
+
+    // Verifica na tabela UserShelter
+    const userShelter = await this.prisma.userShelter.findUnique({
+      where: {
+        userId_shelterId: {
+          userId,
+          shelterId,
+        },
+      },
+    });
+
+    if (userShelter) {
+      return {
+        role: userShelter.role,
+        isAdmin: userShelter.role === 'OWNER' || userShelter.role === 'ADMIN',
+      };
+    }
+
+    // Verifica se é voluntário do abrigo
+    const volunteer = await this.prisma.volunteer.findUnique({
+      where: { userId },
+    });
+
+    if (volunteer && volunteer.shelterId === shelterId) {
+      return { role: 'VOLUNTEER', isAdmin: false };
+    }
+
+    throw new NotFoundException('Usuário não tem acesso a este abrigo');
   }
 }

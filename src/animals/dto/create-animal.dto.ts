@@ -124,9 +124,9 @@ export class CreateAnimalDto {
 
   @ApiProperty({
     description: 'ID do abrigo onde o animal está',
-    example: '123e4567-e89b-12d3-a456-426614174000',
+    example: 'cmhmw2g560002t3q2140ronpg',
   })
-  @IsUUID()
+  @IsString()
   @IsNotEmpty()
   shelterId: string;
 }

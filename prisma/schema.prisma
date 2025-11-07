@@ -7,6 +7,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ShelterRole {
+  OWNER
+  ADMIN
+  VOLUNTEER
+}
+
 model Animal {
   id        String   @id @default(cuid())
   name      String
@@ -106,23 +112,39 @@ model Shelter {
   resources       Resource[]
   modules         ShelterModule[]
   shelteredPeople ShelteredPerson[]
-  owner           User              @relation(fields: [ownerId], references: [id])
+  owner           User              @relation("ShelterOwner", fields: [ownerId], references: [id])
   volunteers      Volunteer[]
+  userShelters    UserShelter[]
 
   @@map("shelters")
 }
 
 model User {
-  id        String      @id @default(cuid())
-  email     String      @unique
-  password  String
-  name      String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  shelters  Shelter[]
-  volunteer Volunteer?
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ownedShelters Shelter[]    @relation("ShelterOwner")
+  volunteer    Volunteer?
+  userShelters UserShelter[]
 
   @@map("users")
+}
+
+model UserShelter {
+  id        String      @id @default(cuid())
+  userId    String
+  shelterId String
+  role      ShelterRole @default(VOLUNTEER)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shelter   Shelter     @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shelterId])
+  @@map("user_shelters")
 }
 
 model Volunteer {

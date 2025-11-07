@@ -20,16 +20,24 @@ import { AnimalsService } from './animals.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ModulePermissionGuard } from '../auth/guards/module-permission.guard';
+import {
+  CheckModulePermission,
+  ModulePermission,
+} from '../auth/decorators/module-permission.decorator';
+import { ModuleKey } from '../auth/decorators/module-key.decorator';
 
 @ApiTags('animals')
 @Controller('animals')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ModulePermissionGuard)
 @ApiBearerAuth()
+@ModuleKey('animals')
 export class AnimalsController {
   constructor(private readonly animalsService: AnimalsService) {}
 
   @Post()
   @ApiOperation({ summary: 'Criar um novo animal' })
+  @CheckModulePermission(ModulePermission.WRITE)
   @ApiResponse({
     status: 201,
     description: 'Animal criado com sucesso',
@@ -44,6 +52,7 @@ export class AnimalsController {
 
   @Get()
   @ApiOperation({ summary: 'Listar todos os animais' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiQuery({
     name: 'shelterId',
     required: false,
@@ -59,6 +68,7 @@ export class AnimalsController {
 
   @Get('shelter/:shelterId')
   @ApiOperation({ summary: 'Listar animais de um abrigo específico' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiResponse({
     status: 200,
     description: 'Lista de animais do abrigo retornada com sucesso',
@@ -73,6 +83,7 @@ export class AnimalsController {
 
   @Get('shelter/:shelterId/stats')
   @ApiOperation({ summary: 'Obter estatísticas dos animais de um abrigo' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiResponse({
     status: 200,
     description: 'Estatísticas retornadas com sucesso',
@@ -87,6 +98,7 @@ export class AnimalsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Buscar um animal por ID' })
+  @CheckModulePermission(ModulePermission.READ)
   @ApiResponse({
     status: 200,
     description: 'Animal encontrado',
@@ -101,6 +113,7 @@ export class AnimalsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Atualizar um animal' })
+  @CheckModulePermission(ModulePermission.WRITE)
   @ApiResponse({
     status: 200,
     description: 'Animal atualizado com sucesso',
@@ -115,6 +128,7 @@ export class AnimalsController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remover um animal' })
+  @CheckModulePermission(ModulePermission.WRITE)
   @ApiResponse({
     status: 200,
     description: 'Animal removido com sucesso',

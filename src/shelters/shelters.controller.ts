@@ -34,7 +34,7 @@ export class SheltersController {
   @ApiResponse({ status: 201, description: 'Abrigo criado com sucesso' })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
   create(@Body() createShelterDto: CreateShelterDto, @Request() req) {
-    return this.sheltersService.create(createShelterDto, req.user.userId);
+    return this.sheltersService.create(createShelterDto, req.user.id);
   }
 
   @Get()
@@ -72,10 +72,16 @@ export class SheltersController {
   }
 
   @Get('my-shelters')
-  @ApiOperation({ summary: 'Listar abrigos do usuário autenticado' })
-  @ApiResponse({ status: 200, description: 'Lista de abrigos do usuário' })
-  findMyOwnedShelters(@Request() req) {
-    return this.sheltersService.findByOwner(req.user.userId);
+  @ApiOperation({
+    summary: 'Listar todos os abrigos do usuário (proprietário + voluntário)',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Lista de todos os abrigos do usuário (como proprietário ou voluntário)',
+  })
+  findMyShelters(@Request() req) {
+    return this.sheltersService.findAllByUserId(req.user.id);
   }
 
   @Get(':id')
@@ -84,6 +90,17 @@ export class SheltersController {
   @ApiResponse({ status: 404, description: 'Abrigo não encontrado' })
   findOne(@Param('id') id: string) {
     return this.sheltersService.findOne(id);
+  }
+
+  @Get(':id/user-role')
+  @ApiOperation({ summary: 'Obter o role do usuário no abrigo' })
+  @ApiResponse({ status: 200, description: 'Role do usuário no abrigo' })
+  @ApiResponse({
+    status: 404,
+    description: 'Abrigo não encontrado ou usuário não tem acesso',
+  })
+  getUserRole(@Param('id') id: string, @Request() req) {
+    return this.sheltersService.getUserRoleInShelter(req.user.id, id);
   }
 
   @Patch(':id')
@@ -96,7 +113,7 @@ export class SheltersController {
     @Body() updateShelterDto: UpdateShelterDto,
     @Request() req,
   ) {
-    return this.sheltersService.update(id, updateShelterDto, req.user.userId);
+    return this.sheltersService.update(id, updateShelterDto, req.user.id);
   }
 
   @Delete(':id')
@@ -105,6 +122,6 @@ export class SheltersController {
   @ApiResponse({ status: 403, description: 'Sem permissão para deletar' })
   @ApiResponse({ status: 404, description: 'Abrigo não encontrado' })
   remove(@Param('id') id: string, @Request() req) {
-    return this.sheltersService.remove(id, req.user.userId);
+    return this.sheltersService.remove(id, req.user.id);
   }
 }
