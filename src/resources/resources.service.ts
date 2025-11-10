@@ -122,4 +122,58 @@ export class ResourcesService {
       },
     });
   }
+
+  async withdrawResource(resourceId: string, quantidade: number, shelterId: string) {
+    // Verifica se o recurso existe e pertence ao abrigo especificado
+    const resource = await this.prisma.resource.findFirst({
+      where: {
+        id: resourceId,
+        shelterId: shelterId, // Validação de segurança
+      },
+    });
+
+    if (!resource) {
+      throw new NotFoundException(
+        'Recurso não encontrado ou não pertence a este abrigo',
+      );
+    }
+
+    // Verifica se há quantidade suficiente
+    if (resource.quantidade < quantidade) {
+      throw new NotFoundException(
+        `Quantidade insuficiente. Disponível: ${resource.quantidade} ${resource.unidade}, solicitado: ${quantidade} ${resource.unidade}`,
+      );
+    }
+
+    // Atualiza a quantidade do recurso
+    const novaQuantidade = resource.quantidade - quantidade;
+    
+    // Se a quantidade chegar a zero, pode marcar como "Esgotado"
+    const novoStatus = novaQuantidade === 0 ? 'Esgotado' : resource.status;
+
+    const updatedResource = await this.prisma.resource.update({
+      where: { 
+        id: resourceId,
+      },
+      data: {
+        quantidade: novaQuantidade,
+        status: novoStatus,
+      },
+      include: {
+        shelter: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      message: `Baixa de ${quantidade} ${resource.unidade} realizada com sucesso`,
+      quantidadeRetirada: quantidade,
+      quantidadeRestante: novaQuantidade,
+      resource: updatedResource,
+    };
+  }
 }

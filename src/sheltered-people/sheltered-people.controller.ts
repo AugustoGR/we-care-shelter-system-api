@@ -19,6 +19,7 @@ import {
 import { ShelteredPeopleService } from './sheltered-people.service';
 import { CreateShelteredPersonDto } from './dto/create-sheltered-person.dto';
 import { UpdateShelteredPersonDto } from './dto/update-sheltered-person.dto';
+import { CheckoutShelteredPeopleDto } from './dto/checkout-sheltered-people.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ModulePermissionGuard } from '../auth/guards/module-permission.guard';
 import {
@@ -167,5 +168,26 @@ export class ShelteredPeopleController {
   })
   remove(@Param('id') id: string) {
     return this.shelteredPeopleService.remove(id);
+  }
+
+  @Post('checkout')
+  @ApiOperation({ 
+    summary: 'Fazer checkout de abrigados',
+    description: 'Marca múltiplos abrigados como inativos (não estão mais no abrigo)'
+  })
+  @CheckModulePermission(ModulePermission.WRITE)
+  @ApiResponse({
+    status: 200,
+    description: 'Checkout realizado com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Um ou mais abrigados não foram encontrados',
+  })
+  checkout(@Body() checkoutShelteredPeopleDto: CheckoutShelteredPeopleDto) {
+    return this.shelteredPeopleService.checkoutPeople(
+      checkoutShelteredPeopleDto.peopleIds,
+      checkoutShelteredPeopleDto.shelterId
+    );
   }
 }

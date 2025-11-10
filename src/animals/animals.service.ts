@@ -7,11 +7,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 
+const sharp = require('sharp');
+
 @Injectable()
 export class AnimalsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createAnimalDto: CreateAnimalDto) {
+  async create(createAnimalDto: CreateAnimalDto, photoFile?: Express.Multer.File) {
     // Verifica se o abrigo existe
     const shelter = await this.prisma.shelter.findUnique({
       where: { id: createAnimalDto.shelterId },
@@ -23,7 +25,33 @@ export class AnimalsService {
       );
     }
 
-    return this.prisma.animal.create({
+    // Processar foto se foi enviada como arquivo
+    let processedPhoto: string | undefined = undefined;
+    if (photoFile) {
+      try {
+        
+        // Processar a imagem com Sharp
+        const processedBuffer = await sharp(photoFile.buffer)
+          .jpeg({ quality: 60, progressive: true })
+          .resize(800, 800, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .toBuffer();
+        
+        // Converter para base64
+        const base64 = processedBuffer.toString('base64');
+        processedPhoto = `data:image/jpeg;base64,${base64}`;
+        
+      } catch (error) {
+        console.error('❌ Erro ao processar imagem:', error);
+        throw new BadRequestException(
+          `Erro ao processar imagem: ${error.message}`,
+        );
+      }
+    }
+
+    const animal = await this.prisma.animal.create({
       data: {
         name: createAnimalDto.name,
         species: createAnimalDto.species,
@@ -36,7 +64,7 @@ export class AnimalsService {
         cinomose: createAnimalDto.cinomose ?? false,
         parvo: createAnimalDto.parvo ?? false,
         felina: createAnimalDto.felina ?? false,
-        photo: createAnimalDto.photo,
+        photo: processedPhoto,
         status: createAnimalDto.status ?? 'Em Cuidado',
         shelterId: createAnimalDto.shelterId,
       },
@@ -49,12 +77,15 @@ export class AnimalsService {
         },
       },
     });
+
+
+    return animal;
   }
 
   async findAll(shelterId?: string) {
     const where = shelterId ? { shelterId } : {};
 
-    return this.prisma.animal.findMany({
+    const animals = await this.prisma.animal.findMany({
       where,
       include: {
         shelter: {
@@ -68,6 +99,8 @@ export class AnimalsService {
         createdAt: 'desc',
       },
     });
+
+    return animals;
   }
 
   async findOne(id: string) {
@@ -102,15 +135,25 @@ export class AnimalsService {
       throw new NotFoundException(`Abrigo com ID ${shelterId} não encontrado`);
     }
 
-    return this.prisma.animal.findMany({
+    const animals = await this.prisma.animal.findMany({
       where: { shelterId },
+      include: {
+        shelter: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
     });
+
+    return animals;
   }
 
-  async update(id: string, updateAnimalDto: UpdateAnimalDto) {
+  async update(id: string, updateAnimalDto: UpdateAnimalDto, photoFile?: Express.Multer.File) {
     // Verifica se o animal existe
     const animal = await this.prisma.animal.findUnique({
       where: { id },
@@ -133,9 +176,35 @@ export class AnimalsService {
       }
     }
 
+    // Processar foto se foi enviada como arquivo
+    let processedPhoto: string | undefined = undefined;
+    if (photoFile) {
+      try {
+        
+        const processedBuffer = await sharp(photoFile.buffer)
+          .jpeg({ quality: 60, progressive: true })
+          .resize(800, 800, {
+            fit: 'inside',
+            withoutEnlargement: true,
+          })
+          .toBuffer();
+        
+        const base64 = processedBuffer.toString('base64');
+        processedPhoto = `data:image/jpeg;base64,${base64}`;
+        
+      } catch (error) {
+        throw new BadRequestException(
+          `Erro ao processar imagem: ${error.message}`,
+        );
+      }
+    }
+
     return this.prisma.animal.update({
       where: { id },
-      data: updateAnimalDto,
+      data: {
+        ...updateAnimalDto,
+        ...(processedPhoto && { photo: processedPhoto }),
+      },
       include: {
         shelter: {
           select: {
@@ -201,6 +270,46 @@ export class AnimalsService {
       bySpecies,
       byHealth,
       byStatus,
+    };
+  }
+
+  async checkoutAnimals(animalIds: string[], shelterId: string) {
+    // Verifica se todos os animais existem e pertencem ao abrigo especificado
+    const animals = await this.prisma.animal.findMany({
+      where: {
+        id: {
+          in: animalIds,
+        },
+        shelterId: shelterId, // Validação de segurança
+      },
+    });
+
+    if (animals.length !== animalIds.length) {
+      const foundIds = animals.map((a) => a.id);
+      const notFoundIds = animalIds.filter((id) => !foundIds.includes(id));
+      throw new NotFoundException(
+        `Os seguintes animais não foram encontrados ou não pertencem a este abrigo: ${notFoundIds.join(', ')}`,
+      );
+    }
+
+    // Marca todos os animais como inativos
+    const result = await this.prisma.animal.updateMany({
+      where: {
+        id: {
+          in: animalIds,
+        },
+        shelterId: shelterId, // Validação adicional
+      },
+      data: {
+        active: false,
+        status: 'Inativo',
+      },
+    });
+
+    return {
+      message: `${result.count} animal(is) marcado(s) como inativo(s) com sucesso`,
+      count: result.count,
+      animalIds,
     };
   }
 }

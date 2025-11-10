@@ -28,7 +28,7 @@ SELECT
     gen_random_uuid(),
     "ownerId",
     "id",
-    'OWNER'::\"ShelterRole\",
+    'OWNER'::"ShelterRole",
     NOW(),
     NOW()
 FROM "shelters"
@@ -41,8 +41,8 @@ SELECT
     v."userId",
     v."shelterId",
     CASE 
-        WHEN u."role" = 'ADMIN' THEN 'ADMIN'::\"ShelterRole\"
-        ELSE 'VOLUNTEER'::\"ShelterRole\"
+        WHEN u."role" = 'ADMIN' THEN 'ADMIN'::"ShelterRole"
+        ELSE 'VOLUNTEER'::"ShelterRole"
     END,
     NOW(),
     NOW()

@@ -8,6 +8,7 @@ import {
   IsBoolean,
   IsUUID,
 } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateAnimalDto {
   @ApiProperty({
@@ -38,6 +39,7 @@ export class CreateAnimalDto {
     description: 'Idade do animal em anos',
     example: 3,
   })
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   @IsOptional()
@@ -74,6 +76,11 @@ export class CreateAnimalDto {
     example: true,
     default: false,
   })
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   @IsBoolean()
   @IsOptional()
   rabies?: boolean;
@@ -82,6 +89,11 @@ export class CreateAnimalDto {
     description: 'Vacinado contra cinomose',
     example: true,
     default: false,
+  })
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
   })
   @IsBoolean()
   @IsOptional()
@@ -92,6 +104,11 @@ export class CreateAnimalDto {
     example: false,
     default: false,
   })
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   @IsBoolean()
   @IsOptional()
   parvo?: boolean;
@@ -101,15 +118,19 @@ export class CreateAnimalDto {
     example: false,
     default: false,
   })
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   @IsBoolean()
   @IsOptional()
   felina?: boolean;
 
   @ApiPropertyOptional({
-    description: 'URL da foto do animal',
-    example: 'https://example.com/photo.jpg',
+    description: 'Foto do animal em base64 ou URL. Se for base64, a imagem será otimizada automaticamente',
+    example: 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...',
   })
-  @IsString()
   @IsOptional()
   photo?: string;
 

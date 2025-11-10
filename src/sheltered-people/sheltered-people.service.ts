@@ -3,7 +3,7 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import * as moment from 'moment';
+import moment from 'moment';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateShelteredPersonDto } from './dto/create-sheltered-person.dto';
 import { UpdateShelteredPersonDto } from './dto/update-sheltered-person.dto';
@@ -277,5 +277,45 @@ export class ShelteredPeopleService {
     const today = moment();
     const birth = moment.utc(birthDate);
     return today.diff(birth, 'years');
+  }
+
+  async checkoutPeople(peopleIds: string[], shelterId: string) {
+    // Verifica se todos os abrigados existem e pertencem ao abrigo especificado
+    const people = await this.prisma.shelteredPerson.findMany({
+      where: {
+        id: {
+          in: peopleIds,
+        },
+        shelterId: shelterId, // Validação de segurança
+      },
+    });
+
+    if (people.length !== peopleIds.length) {
+      const foundIds = people.map((p) => p.id);
+      const notFoundIds = peopleIds.filter((id) => !foundIds.includes(id));
+      throw new NotFoundException(
+        `Os seguintes abrigados não foram encontrados ou não pertencem a este abrigo: ${notFoundIds.join(', ')}`,
+      );
+    }
+
+    // Marca todos os abrigados como inativos
+    const result = await this.prisma.shelteredPerson.updateMany({
+      where: {
+        id: {
+          in: peopleIds,
+        },
+        shelterId: shelterId, // Validação adicional
+      },
+      data: {
+        active: false,
+        status: 'Inativo',
+      },
+    });
+
+    return {
+      message: `${result.count} abrigado(s) marcado(s) como inativo(s) com sucesso`,
+      count: result.count,
+      peopleIds,
+    };
   }
 }

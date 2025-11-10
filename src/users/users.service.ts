@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
@@ -65,5 +67,56 @@ export class UsersService {
   async findAll() {
     const users = await this.prisma.user.findMany();
     return users.map(({ password, ...user }) => user);
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const updateData: any = {};
+
+    // Busca o usuário para validações
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new BadRequestException('Usuário não encontrado');
+    }
+
+    if (updateUserDto.name !== undefined) {
+      updateData.name = updateUserDto.name;
+    }
+
+    if (updateUserDto.email !== undefined) {
+      updateData.email = updateUserDto.email;
+    }
+
+    // Validação de senha
+    if (updateUserDto.password !== undefined) {
+      if (!updateUserDto.currentPassword) {
+        throw new BadRequestException(
+          'Senha atual é obrigatória para alterar a senha',
+        );
+      }
+
+      // Verifica se a senha atual está correta
+      const isPasswordValid = await bcrypt.compare(
+        updateUserDto.currentPassword,
+        user.password,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Senha atual incorreta');
+      }
+
+      // Hash da nova senha
+      updateData.password = await bcrypt.hash(updateUserDto.password, 10);
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+    });
+
+    const { password, ...result } = updatedUser;
+    return result;
   }
 }

@@ -19,6 +19,7 @@ import {
 import { ResourcesService } from './resources.service';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
+import { WithdrawResourceDto } from './dto/withdraw-resource.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ModulePermissionGuard } from '../auth/guards/module-permission.guard';
 import {
@@ -128,5 +129,27 @@ export class ResourcesController {
   })
   remove(@Param('id') id: string) {
     return this.resourcesService.remove(id);
+  }
+
+  @Post('withdraw')
+  @ApiOperation({ 
+    summary: 'Dar baixa em um recurso',
+    description: 'Reduz a quantidade de um recurso específico do estoque. Se a quantidade chegar a zero, o status será marcado como "Esgotado".'
+  })
+  @CheckModulePermission(ModulePermission.WRITE)
+  @ApiResponse({
+    status: 200,
+    description: 'Baixa realizada com sucesso',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Recurso não encontrado ou quantidade insuficiente',
+  })
+  withdraw(@Body() withdrawResourceDto: WithdrawResourceDto) {
+    return this.resourcesService.withdrawResource(
+      withdrawResourceDto.resourceId,
+      withdrawResourceDto.quantidade,
+      withdrawResourceDto.shelterId
+    );
   }
 }

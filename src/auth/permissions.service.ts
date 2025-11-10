@@ -164,12 +164,6 @@ export class PermissionsService {
     });
 
     if (!volunteer || volunteer.shelterId !== shelterId) {
-      console.log('[PermissionsService] Volunteer not found or wrong shelter', {
-        userId,
-        volunteerId: volunteer?.id,
-        volunteerShelterId: volunteer?.shelterId,
-        requestedShelterId: shelterId,
-      });
       return false;
     }
 
@@ -179,10 +173,6 @@ export class PermissionsService {
     );
 
     if (isResponsible) {
-      console.log('[PermissionsService] User is RESPONSIBLE for module', {
-        userId,
-        moduleKey,
-      });
       return true;
     }
 
@@ -192,16 +182,6 @@ export class PermissionsService {
         assoc.shelterModule.moduleKey === moduleKey &&
         assoc.shelterModule.shelterId === shelterId,
     );
-
-    console.log('[PermissionsService] Checking if user is ASSOCIATED', {
-      userId,
-      moduleKey,
-      isAssociated,
-      associatedModules: volunteer.associatedModules.map(am => ({
-        moduleKey: am.shelterModule.moduleKey,
-        shelterId: am.shelterModule.shelterId,
-      })),
-    });
 
     return isAssociated;
   }

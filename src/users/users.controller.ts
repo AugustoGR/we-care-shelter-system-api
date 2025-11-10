@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Query, Patch, Param, Body } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -8,6 +8,7 @@ import {
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -108,5 +109,35 @@ export class UsersController {
   })
   findAll() {
     return this.usersService.findAll();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch(':id')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Atualizar dados do usuário' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuário atualizado com sucesso.',
+    schema: {
+      example: {
+        id: 'uuid',
+        email: 'novo@example.com',
+        name: 'Novo Nome',
+        role: 'VOLUNTEER',
+        createdAt: '2025-10-23T00:00:00.000Z',
+        updatedAt: '2025-11-10T00:00:00.000Z',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Não autorizado. Token inválido ou ausente.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuário não encontrado.',
+  })
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
   }
 }

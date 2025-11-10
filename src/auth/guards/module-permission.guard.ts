@@ -80,15 +80,6 @@ export class ModulePermissionGuard implements CanActivate {
           moduleKey,
           shelterId,
         );
-        
-        // Log de debug para WRITE permission
-        if (!hasPermission) {
-          console.log('[ModulePermissionGuard] WRITE permission denied', {
-            userId: user.id,
-            moduleKey,
-            shelterId,
-          });
-        }
         break;
 
       case ModulePermission.MANAGE:
@@ -123,12 +114,17 @@ export class ModulePermissionGuard implements CanActivate {
     moduleKey?: string;
     moduleId?: string;
   }> {
+    // Para multipart/form-data, NÃO podemos parsear o stream aqui
+    // porque o Multer precisa dele depois. O shelterId deve vir via query param.
+    const isMultipart = request.headers['content-type']?.includes('multipart/form-data');
+    
     // Extrai parâmetros de diferentes locais (params, query, body)
+    // Para multipart, prioriza query params
     let shelterId =
       request.params?.shelterId ||
       request.params?.shelter ||
       request.query?.shelterId ||
-      request.body?.shelterId;
+      (!isMultipart && request.body?.shelterId);
 
     // Se não encontrou shelterId e há um ID no path, tenta buscar do registro
     if (!shelterId && request.params?.id) {
@@ -173,13 +169,13 @@ export class ModulePermissionGuard implements CanActivate {
       decoratorModuleKey ||
       request.params?.moduleKey ||
       request.query?.moduleKey ||
-      request.body?.moduleKey;
+      (!isMultipart && request.body?.moduleKey);
 
     const moduleId =
       request.params?.moduleId ||
       request.params?.id ||
       request.query?.moduleId ||
-      request.body?.moduleId;
+      (!isMultipart && request.body?.moduleId);
 
     return { shelterId, moduleKey, moduleId };
   }
