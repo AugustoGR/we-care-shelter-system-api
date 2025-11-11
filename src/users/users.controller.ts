@@ -37,7 +37,7 @@ export class UsersController {
     description: 'Não autorizado. Token inválido ou ausente.',
   })
   getProfile(@Request() req) {
-    return this.usersService.findById(req.user.userId);
+    return this.usersService.findById(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -11,6 +11,7 @@ import { AnimalsModule } from './animals/animals.module';
 import { ShelteredPeopleModule } from './sheltered-people/sheltered-people.module';
 import { ResourcesModule } from './resources/resources.module';
 import { ShelterModulesModule } from './shelter-modules/shelter-modules.module';
+import { VolunteerInvitationsModule } from './volunteer-invitations/volunteer-invitations.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ShelterModulesModule } from './shelter-modules/shelter-modules.module';
     ShelteredPeopleModule,
     ResourcesModule,
     ShelterModulesModule,
+    VolunteerInvitationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

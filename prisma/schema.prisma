@@ -13,6 +13,12 @@ enum ShelterRole {
   VOLUNTEER
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model Animal {
   id        String   @id @default(cuid())
   name      String
@@ -117,6 +123,7 @@ model Shelter {
   owner           User              @relation("ShelterOwner", fields: [ownerId], references: [id])
   volunteers      Volunteer[]
   userShelters    UserShelter[]
+  volunteerInvitations VolunteerInvitation[]
 
   @@map("shelters")
 }
@@ -131,6 +138,7 @@ model User {
   ownedShelters Shelter[]    @relation("ShelterOwner")
   volunteer    Volunteer?
   userShelters UserShelter[]
+  volunteerInvitations VolunteerInvitation[]
 
   @@map("users")
 }
@@ -165,4 +173,20 @@ model Volunteer {
   user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("volunteers")
+}
+
+model VolunteerInvitation {
+  id        String           @id @default(cuid())
+  userId    String
+  shelterId String
+  phone     String
+  skills    String[]         @default([])
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  shelter   Shelter          @relation(fields: [shelterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, shelterId])
+  @@map("volunteer_invitations")
 }
