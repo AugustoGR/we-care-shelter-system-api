@@ -24,7 +24,7 @@ services:
       context: .
       dockerfile: Dockerfile.prod
     container_name: wecare_backend
-    restart: unless-stopped
+    restart: on-failure:5
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-wecare}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-we_care_shelter}?schema=public
       JWT_SECRET: ${JWT_SECRET}
@@ -37,6 +37,12 @@ services:
       - wecare_network
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/api || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   # Frontend Next.js
   frontend:
@@ -58,7 +64,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: wecare_nginx
-    restart: on-failure:5
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -72,7 +78,11 @@ services:
       - frontend
     networks:
       - wecare_network
-    command: ["/bin/sh", "-c", "sleep 5 && nginx -g 'daemon off;'"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # Certbot para SSL
   certbot:

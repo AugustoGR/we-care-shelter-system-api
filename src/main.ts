@@ -4,7 +4,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -14,7 +16,29 @@ async function bootstrap() {
     }),
   );
 
-  app.enableCors();
+  // CORS configurado para produção
+  const allowedOrigins = [
+    'https://wecare-system.com',
+    'https://www.wecare-system.com',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ];
+
+  app.enableCors({
+    origin: (origin, callback) => {
+      // Permitir requisições sem origin (como apps mobile ou Postman)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  });
 
   // Swagger Configuration
   const config = new DocumentBuilder()
@@ -46,6 +70,6 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();
