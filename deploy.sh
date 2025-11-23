@@ -5,6 +5,9 @@
 
 set -e
 
+# Definir arquivo de ambiente
+ENV_FILE=".env.production"
+
 # Cores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -26,8 +29,8 @@ error() {
 
 # Verificar se .env.production existe
 check_env() {
-    if [ ! -f .env.production ]; then
-        error "Arquivo .env.production não encontrado!"
+    if [ ! -f "$ENV_FILE" ]; then
+        error "Arquivo $ENV_FILE não encontrado!"
         info "Copie o arquivo .env.production.example e configure suas variáveis"
         exit 1
     fi
@@ -36,7 +39,7 @@ check_env() {
 # Build das imagens
 build() {
     info "Construindo imagens Docker..."
-    docker-compose -f docker-compose.prod.yml build
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" build
     info "Build concluído!"
 }
 
@@ -44,7 +47,7 @@ build() {
 up() {
     check_env
     info "Iniciando serviços..."
-    docker-compose -f docker-compose.prod.yml up -d
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" up -d
     info "Serviços iniciados!"
     info "Aguardando containers ficarem prontos..."
     sleep 10
@@ -54,14 +57,14 @@ up() {
 # Parar serviços
 down() {
     info "Parando serviços..."
-    docker-compose -f docker-compose.prod.yml down
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" down
     info "Serviços parados!"
 }
 
 # Reiniciar serviços
 restart() {
     info "Reiniciando serviços..."
-    docker-compose -f docker-compose.prod.yml restart
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" restart
     info "Serviços reiniciados!"
 }
 
@@ -69,22 +72,22 @@ restart() {
 logs() {
     SERVICE=$1
     if [ -z "$SERVICE" ]; then
-        docker-compose -f docker-compose.prod.yml logs -f
+        docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" logs -f
     else
-        docker-compose -f docker-compose.prod.yml logs -f $SERVICE
+        docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" logs -f $SERVICE
     fi
 }
 
 # Status dos containers
 status() {
     info "Status dos containers:"
-    docker-compose -f docker-compose.prod.yml ps
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" ps
 }
 
 # Executar migrations
 migrate() {
     info "Executando migrations..."
-    docker-compose -f docker-compose.prod.yml exec backend npx prisma migrate deploy
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" exec backend npx prisma migrate deploy
     info "Migrations executadas!"
 }
 
@@ -92,7 +95,7 @@ migrate() {
 backup() {
     info "Criando backup do banco de dados..."
     BACKUP_FILE="backup_$(date +%Y%m%d_%H%M%S).sql"
-    docker-compose -f docker-compose.prod.yml exec -T postgres pg_dump -U wecare we_care_shelter > $BACKUP_FILE
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" exec -T postgres pg_dump -U wecare we_care_shelter > $BACKUP_FILE
     info "Backup criado: $BACKUP_FILE"
 }
 
@@ -102,7 +105,7 @@ ssl_init() {
     read -p "Digite seu email: " EMAIL
     read -p "Digite o domínio principal (ex: wecare-system.com): " DOMAIN
     
-    docker-compose -f docker-compose.prod.yml run --rm certbot certonly \
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" run --rm certbot certonly \
         --webroot \
         --webroot-path=/var/www/certbot \
         --email $EMAIL \
@@ -113,14 +116,14 @@ ssl_init() {
         -d api.$DOMAIN
     
     info "Certificados obtidos! Agora reinicie o Nginx:"
-    info "docker-compose -f docker-compose.prod.yml restart nginx"
+    info "docker-compose -f docker-compose.prod.yml --env-file $ENV_FILE restart nginx"
 }
 
 # SSL - Renovar certificados
 ssl_renew() {
     info "Renovando certificados SSL..."
-    docker-compose -f docker-compose.prod.yml run --rm certbot renew
-    docker-compose -f docker-compose.prod.yml exec nginx nginx -s reload
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" run --rm certbot renew
+    docker-compose -f docker-compose.prod.yml --env-file "$ENV_FILE" exec nginx nginx -s reload
     info "Certificados renovados!"
 }
 
