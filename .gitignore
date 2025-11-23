@@ -38,6 +38,12 @@ lerna-debug.log*
 .env
 .env.local
 .env.production
+.env.production.local
 
 # Docker
 docker-data/
+
+# Deployment - SSL certificates and backups
+certbot/
+*.sql
+postgres_data/
