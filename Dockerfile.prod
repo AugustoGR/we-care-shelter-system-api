@@ -7,14 +7,18 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalar dependências
-RUN npm ci --legacy-peer-deps
+# Limpar cache do npm e instalar dependências
+RUN npm cache clean --force && \
+    npm ci --legacy-peer-deps
+
+# Verificar versão do Prisma instalada
+RUN ./node_modules/.bin/prisma --version
 
 # Copiar código fonte
 COPY . .
 
-# Gerar Prisma Client
-RUN npx prisma generate
+# Gerar Prisma Client usando a versão local
+RUN ./node_modules/.bin/prisma generate
 
 # Build da aplicação
 RUN npm run build
@@ -28,7 +32,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar apenas dependências de produção
-RUN npm ci --only=production --legacy-peer-deps
+RUN npm cache clean --force && \
+    npm ci --only=production --legacy-peer-deps
 
 # Copiar build da etapa anterior
 COPY --from=builder /app/dist ./dist
@@ -38,5 +43,5 @@ COPY --from=builder /app/prisma ./prisma
 # Expor porta
 EXPOSE 3000
 
-# Comando para iniciar
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
+# Comando para iniciar usando a versão local do Prisma
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/main"]
