@@ -29,16 +29,14 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-wecare}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-we_care_shelter}?schema=public
       JWT_SECRET: ${JWT_SECRET}
       NODE_ENV: production
+      PORT: 3000
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - wecare_network
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    ports:
+      - "3000:3000"
 
   # Frontend Next.js
   frontend:
@@ -60,7 +58,7 @@ services:
   nginx:
     image: nginx:alpine
     container_name: wecare_nginx
-    restart: unless-stopped
+    restart: on-failure:5
     ports:
       - "80:80"
       - "443:443"
@@ -74,6 +72,7 @@ services:
       - frontend
     networks:
       - wecare_network
+    command: ["/bin/sh", "-c", "sleep 5 && nginx -g 'daemon off;'"]
 
   # Certbot para SSL
   certbot:
