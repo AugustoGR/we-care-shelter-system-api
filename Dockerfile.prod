@@ -46,4 +46,4 @@ COPY --from=builder /app/package*.json ./
 EXPOSE 3000
 
 # Comando para iniciar
-CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/main"]
+CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/src/main"]
