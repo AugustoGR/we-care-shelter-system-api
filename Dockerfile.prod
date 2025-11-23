@@ -8,7 +8,7 @@ COPY package*.json ./
 COPY prisma ./prisma/
 
 # Instalar dependências
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # Copiar código fonte
 COPY . .
@@ -28,7 +28,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Instalar apenas dependências de produção
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
 # Copiar build da etapa anterior
 COPY --from=builder /app/dist ./dist
