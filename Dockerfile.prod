@@ -34,20 +34,16 @@ WORKDIR /app
 # Instalar dependências do sistema necessárias para o Prisma
 RUN apk add --no-cache openssl libc6-compat
 
-# Copiar package.json
-COPY package*.json ./
+# Copiar node_modules completo da etapa de build (inclui Prisma CLI)
+COPY --from=builder /app/node_modules ./node_modules
 
-# Instalar apenas dependências de produção
-RUN npm cache clean --force && \
-    npm ci --only=production --legacy-peer-deps
-
-# Copiar build da etapa anterior
+# Copiar build e arquivos necessários
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package*.json ./
 
 # Expor porta
 EXPOSE 3000
 
-# Comando para iniciar usando a versão local do Prisma
+# Comando para iniciar
 CMD ["sh", "-c", "./node_modules/.bin/prisma migrate deploy && node dist/main"]
