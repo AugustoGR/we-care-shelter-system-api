@@ -17,36 +17,38 @@ async function bootstrap() {
   );
 
   // CORS configurado para produção
-  const allowedOrigins = [
-    'https://wecare-system.com',
-    'https://www.wecare-system.com',
-    'http://localhost:3000',
-    'http://localhost:3001',
-  ];
-
-  // Em produção, permitir requisições do mesmo servidor
   const isProduction = process.env.NODE_ENV === 'production';
 
-  app.enableCors({
-    origin: (origin, callback) => {
-      // Permitir requisições sem origin (como apps mobile ou Postman)
-      if (!origin) return callback(null, true);
-      
-      // Em produção, permitir qualquer origem (já que está atrás do Nginx)
-      if (isProduction) {
-        return callback(null, true);
-      }
-      
-      if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  });
+  if (isProduction) {
+    // Em produção, permitir todas as origens
+    app.enableCors({
+      origin: '*',
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    });
+  } else {
+    // Em desenvolvimento, restringir origens
+    const allowedOrigins = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
+
+    app.enableCors({
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    });
+  }
 
   // Swagger Configuration
   const config = new DocumentBuilder()
