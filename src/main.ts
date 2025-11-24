@@ -24,10 +24,18 @@ async function bootstrap() {
     'http://localhost:3001',
   ];
 
+  // Em produção, permitir requisições do mesmo servidor
+  const isProduction = process.env.NODE_ENV === 'production';
+
   app.enableCors({
     origin: (origin, callback) => {
       // Permitir requisições sem origin (como apps mobile ou Postman)
       if (!origin) return callback(null, true);
+      
+      // Em produção, permitir qualquer origem (já que está atrás do Nginx)
+      if (isProduction) {
+        return callback(null, true);
+      }
       
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
